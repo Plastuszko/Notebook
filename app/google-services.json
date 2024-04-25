@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "335537455650",
+    "project_id": "notatnik-252bf",
+    "storage_bucket": "notatnik-252bf.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:335537455650:android:93532f2a1968e16c73807b",
+        "android_client_info": {
+          "package_name": "com.example.notebook"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBNORwKuYLr8xF4UOejabdL8e2ZNvKR3UI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
