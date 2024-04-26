@@ -5,19 +5,13 @@ import android.app.Dialog
 import android.content.ContentValues.TAG
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.text.TextWatcher
 import android.util.Log
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
-import com.example.notebook.R
 import com.example.notebook.databinding.ActivityMainBinding
 import com.example.notebook.utlis.setupDialog
-import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
-import com.google.android.material.textfield.TextInputEditText
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.firestore
 
@@ -69,27 +63,37 @@ class MainActivity : AppCompatActivity() {
             val noteTitle = ednoteTitle.text.toString()
             val noteText = ednote.text.toString()
 
-            Toast.makeText(this, "Notatka została zapisana: "+ noteText, Toast.LENGTH_SHORT).show()
+            // Sprawdzanie, czy notatka o takim tytule już istnieje
+            if (Map_of_titles.containsKey(noteTitle)) {
+                // Notatka o takim tytule już istnieje, wyświetl odpowiednie powiadomienie
+                Toast.makeText(this, "Notatka o takim tytule już istnieje, wybierz inny tytuł", Toast.LENGTH_SHORT).show()
+            } else {
+                // Notatka o takim tytule nie istnieje, dodaj nową notatkę do bazy danych
+                val noteData = hashMapOf(
+                    "who" to user_email,
+                    "noteTitle" to noteTitle,
+                    "note" to noteText
+                )
 
-            val noteData = hashMapOf(
-                "who" to user_email, // Tutaj należy wprowadzić odpowiednią wartość dla pola "who"
-                "noteTitle" to noteTitle,
-                "note" to noteText
-            )
+                db.collection("Notes")
+                    .add(noteData)
+                    .addOnSuccessListener { documentReference ->
+                        Log.d(TAG, "DocumentSnapshot added with ID: ${documentReference.id}")
+                        Toast.makeText(this, "Notatka została zapisana", Toast.LENGTH_SHORT).show()
+                    }
+                    .addOnFailureListener { e ->
+                        Log.w(TAG, "Error adding document", e)
+                        Toast.makeText(this, "Błąd podczas zapisywania notatki", Toast.LENGTH_SHORT).show()
+                    }
 
-            db.collection("Notes")
-                .add(noteData)
-                .addOnSuccessListener { documentReference ->
-                    Log.d(TAG, "DocumentSnapshot added with ID: ${documentReference.id}")
-                    Toast.makeText(this, "Notatka została zapisana", Toast.LENGTH_SHORT).show()
-                }
-                .addOnFailureListener { e ->
-                    Log.w(TAG, "Error adding document", e)
-                    Toast.makeText(this, "Błąd podczas zapisywania notatki", Toast.LENGTH_SHORT).show()
-                }
-            fetchData(user_email)
-            updateNotesDialog.dismiss()
+                // Aktualizacja listy notatek po dodaniu nowej notatki
+                fetchData(user_email)
+
+                // Zamknięcie dialogu po zapisaniu notatki
+                updateNotesDialog.dismiss()
+            }
         }
+
 
 
         mainBinding.addNewNoteBtn.setOnClickListener{
@@ -104,6 +108,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun fetchData(userEmail: String) {
+        Map_of_titles.clear()
+        Map_of_notes.clear()
         db.collection("Notes")
             .whereEqualTo("who", userEmail)
             .get()
@@ -111,22 +117,21 @@ class MainActivity : AppCompatActivity() {
                 for (document in documents) {
                     val noteTitle = document.getString("noteTitle")
                     val noteText = document.getString("note")
-                    Map_of_titles[noteTitle!!]=noteTitle!!
-                    Map_of_notes[noteTitle!!]=noteText!!
+                    if(Map_of_titles[noteTitle!!].isNullOrEmpty()) {
+                        Map_of_titles[noteTitle!!] = noteTitle!!
+                        Map_of_notes[noteTitle!!] = noteText!!
+                    }
 
                 }
-
-                val recyclerView: RecyclerView = mainBinding.notesList
-                recyclerView.layoutManager = LinearLayoutManager(this)
-                notesAdapter = NotesAdapter(Map_of_titles.toList())
-                recyclerView.adapter = notesAdapter
+                // Przekazujemy listę notatek do adaptera
+                val notesList = Map_of_titles.toList()
+                notesAdapter = NotesAdapter(notesList)
+                mainBinding.notesList.adapter = notesAdapter
             }
             .addOnFailureListener { exception ->
                 Log.w(TAG, "Error getting documents: ", exception)
-
             }
-
-
     }
+
 
 }
