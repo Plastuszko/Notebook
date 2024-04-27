@@ -46,9 +46,11 @@ class MainActivity : AppCompatActivity(), NotesAdapter.OnNoteDeleteListener, Not
         }
 
         mainBinding.addNewNoteBtn.setOnClickListener {
+            val ednoteTitle = updateNotesDialog.findViewById<TextView>(R.id.ednoteTitle)
+            val ednote = updateNotesDialog.findViewById<TextView>(R.id.ednote)
+            ednote.text=""
+            ednoteTitle.text=""
             updateNotesDialog.show()
-
-
         }
 
         val saveNotesBtn = updateNotesDialog.findViewById<Button>(R.id.save_notes_btn)
@@ -104,7 +106,6 @@ class MainActivity : AppCompatActivity(), NotesAdapter.OnNoteDeleteListener, Not
             }
             ednote.text=""
             ednoteTitle.text=""
-
         }
 
         val recyclerView: RecyclerView = findViewById(R.id.notes_list)
