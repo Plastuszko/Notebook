@@ -2,61 +2,50 @@ package com.example.notebook
 
 import NotesAdapter
 import android.app.Dialog
-import android.content.ContentValues.TAG
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
 import android.widget.Button
-import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.example.notebook.R
 import com.example.notebook.databinding.ActivityMainBinding
-import com.example.notebook.utlis.setupDialog
-import com.google.firebase.Firebase
-import com.google.firebase.firestore.firestore
+import com.google.firebase.firestore.FirebaseFirestore
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), NotesAdapter.OnNoteDeleteListener {
 
     private val mainBinding: ActivityMainBinding by lazy {
         ActivityMainBinding.inflate(layoutInflater)
     }
 
-
-
-    private val updateNotesDialog: Dialog by lazy {
-        Dialog(this).apply {
-            setupDialog(R.layout.update_notes)
-        }
-
-    }
-
-    var Map_of_titles: MutableMap <String,String> = mutableMapOf()
-    var Map_of_notes: MutableMap<String,String> = mutableMapOf()
+    private val db = FirebaseFirestore.getInstance()
     private lateinit var notesAdapter: NotesAdapter
-    var db = Firebase.firestore
-    var user_email: String =""
+    private var user_email: String = ""
+    private var Map_of_titles: MutableMap<String, String> = mutableMapOf()
+    private var Map_of_notes: MutableMap<String, String> = mutableMapOf()
+
     override fun onCreate(savedInstanceState: Bundle?) {
-        fetchData(user_email)
-
-
-        if(intent.hasExtra("USER")){
-            user_email=intent.getStringExtra("USER")!!
-            Toast.makeText(this,"Hi, $user_email",Toast.LENGTH_SHORT).show()
-        }
-
         super.onCreate(savedInstanceState)
         setContentView(mainBinding.root)
 
+        if (intent.hasExtra("USER")) {
+            user_email = intent.getStringExtra("USER")!!
+            Toast.makeText(this, "Hi, $user_email", Toast.LENGTH_SHORT).show()
+        }
 
+        val updateNotesDialog = Dialog(this).apply {
+            setContentView(R.layout.update_notes)
+        }
 
+        mainBinding.addNewNoteBtn.setOnClickListener {
+            updateNotesDialog.show()
+        }
 
         val saveNotesBtn = updateNotesDialog.findViewById<Button>(R.id.save_notes_btn)
-        val addCloseImg = updateNotesDialog.findViewById<ImageView>(R.id.closeImg)
-        val updateNotesBinding =updateNotesDialog.findViewById<ImageView>(R.id.closeImg)
 
-        addCloseImg.setOnClickListener{updateNotesDialog.dismiss()}
-        updateNotesBinding.setOnClickListener{updateNotesDialog.dismiss()}
-        saveNotesBtn.setOnClickListener{
+        saveNotesBtn.setOnClickListener {
             val ednoteTitle = updateNotesDialog.findViewById<TextView>(R.id.ednoteTitle)
             val ednote = updateNotesDialog.findViewById<TextView>(R.id.ednote)
 
@@ -80,34 +69,51 @@ class MainActivity : AppCompatActivity() {
                     .addOnSuccessListener { documentReference ->
                         Log.d(TAG, "DocumentSnapshot added with ID: ${documentReference.id}")
                         Toast.makeText(this, "Notatka została zapisana", Toast.LENGTH_SHORT).show()
+                        // Aktualizacja listy notatek po dodaniu nowej notatki
+                        fetchData(user_email)
+                        // Zamknięcie dialogu po zapisaniu notatki
+                        updateNotesDialog.dismiss()
                     }
                     .addOnFailureListener { e ->
                         Log.w(TAG, "Error adding document", e)
                         Toast.makeText(this, "Błąd podczas zapisywania notatki", Toast.LENGTH_SHORT).show()
                     }
-
-                // Aktualizacja listy notatek po dodaniu nowej notatki
-                fetchData(user_email)
-
-                // Zamknięcie dialogu po zapisaniu notatki
-                updateNotesDialog.dismiss()
             }
         }
 
+        val recyclerView: RecyclerView = findViewById(R.id.notes_list)
+        val layoutManager = LinearLayoutManager(this)
+        recyclerView.layoutManager = layoutManager
 
-
-        mainBinding.addNewNoteBtn.setOnClickListener{
-            updateNotesDialog.show()
-        }
-
-
-
-
-
-
+        // Pobranie danych przy pierwszym uruchomieniu
+        fetchData(user_email)
     }
 
-    fun fetchData(userEmail: String) {
+    override fun onDeleteClicked(noteTitle: String) {
+        db.collection("Notes")
+            .whereEqualTo("noteTitle", noteTitle)
+            .get()
+            .addOnSuccessListener { documents ->
+                for (document in documents) {
+                    document.reference.delete()
+                        .addOnSuccessListener {
+                            // Usunięto notatkę pomyślnie
+                            // Aktualizacja listy notatek po usunięciu
+                            fetchData(user_email)
+                        }
+                        .addOnFailureListener { e ->
+                            // Błąd podczas usuwania notatki
+                            Log.e(TAG, "Error deleting note", e)
+                        }
+                }
+            }
+            .addOnFailureListener { exception ->
+                // Błąd podczas pobierania notatek
+                Log.e(TAG, "Error getting notes", exception)
+            }
+    }
+
+    private fun fetchData(userEmail: String) {
         Map_of_titles.clear()
         Map_of_notes.clear()
         db.collection("Notes")
@@ -117,15 +123,15 @@ class MainActivity : AppCompatActivity() {
                 for (document in documents) {
                     val noteTitle = document.getString("noteTitle")
                     val noteText = document.getString("note")
-                    if(Map_of_titles[noteTitle!!].isNullOrEmpty()) {
-                        Map_of_titles[noteTitle!!] = noteTitle!!
-                        Map_of_notes[noteTitle!!] = noteText!!
+                    if (noteTitle != null && noteText != null) {
+                        Map_of_titles[noteTitle] = noteTitle
+                        Map_of_notes[noteTitle] = noteText
                     }
-
                 }
                 // Przekazujemy listę notatek do adaptera
                 val notesList = Map_of_titles.toList()
                 notesAdapter = NotesAdapter(notesList)
+                notesAdapter.setOnNoteDeleteListener(this)
                 mainBinding.notesList.adapter = notesAdapter
             }
             .addOnFailureListener { exception ->
@@ -133,5 +139,7 @@ class MainActivity : AppCompatActivity() {
             }
     }
 
-
+    companion object {
+        private const val TAG = "MainActivity"
+    }
 }
