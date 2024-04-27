@@ -28,24 +28,7 @@
                 android:textColor="@color/black"
                 android:textSize="20sp"
                 android:textStyle="bold"/>
-            <TextView
-                android:id="@+id/notes_shortcut"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="notes"
-                android:maxHeight="60dp"
-                android:textColor="@color/black"
-                android:layout_marginVertical="4dp"
-                android:textSize="18sp"
-                android:textStyle="bold"/>
-            <TextView
-                android:id="@+id/date"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Date"
-                android:layout_marginVertical="4dp"
-                android:textSize="14sp"
-              />
+
         </LinearLayout>
 
         <LinearLayout
