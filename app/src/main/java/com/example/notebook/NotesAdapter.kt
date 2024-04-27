@@ -5,19 +5,17 @@ import com.example.notebook.MainActivity
 import com.example.notebook.databinding.ViewNotesLayoutBinding
 import com.google.firebase.firestore.firestore
 
-class NotesAdapter(private val notesList: List<Pair<String, String>>) : RecyclerView.Adapter<NotesAdapter.MyViewHolder>() {
+class NotesAdapter(private val notesList: List<Pair<String, String>>,private val onNoteClickListener: OnNoteClickListener,private val onNoteDeleteListener: OnNoteDeleteListener) : RecyclerView.Adapter<NotesAdapter.MyViewHolder>() {
     var onDeleteListener: OnNoteDeleteListener? = null
     inner class MyViewHolder(private val binding: ViewNotesLayoutBinding) : RecyclerView.ViewHolder(binding.root) {
 
         val noteTitle = binding.titleText
-        val notesShortcut = binding.notesShortcut
         val deleteImg= binding.deleteImg
 
 
 
         fun bind(noteTitle: String, noteText: String) {
             this.noteTitle.text = noteTitle
-            this.notesShortcut.text = noteText
         }
     }
 
@@ -33,6 +31,9 @@ class NotesAdapter(private val notesList: List<Pair<String, String>>) : Recycler
         holder.deleteImg.setOnClickListener{
             onDeleteListener?.onDeleteClicked(noteTitle)
         }
+        holder.itemView.setOnClickListener {
+            onNoteClickListener.onNoteClicked(noteTitle, noteText)
+        }
         }
 
 
@@ -46,7 +47,9 @@ class NotesAdapter(private val notesList: List<Pair<String, String>>) : Recycler
         onDeleteListener = listener
     }
 
-
+    interface OnNoteClickListener {
+        fun onNoteClicked(noteTitle: String, noteText: String)
+    }
 
 
 }
