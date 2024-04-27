@@ -35,7 +35,7 @@
 
 
 
-    </LinearLayout>>
+    </LinearLayout>
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/add_new_note_btn"
