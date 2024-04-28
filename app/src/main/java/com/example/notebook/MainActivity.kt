@@ -25,7 +25,7 @@ class MainActivity : AppCompatActivity(), NotesAdapter.OnNoteDeleteListener, Not
     private val mainBinding: ActivityMainBinding by lazy {
         ActivityMainBinding.inflate(layoutInflater)
     }
-
+    //↓↓↓ inicjalizacja bazy danych
     private val db = FirebaseFirestore.getInstance()
     private lateinit var notesAdapter: NotesAdapter
     private var user_email: String = ""
@@ -107,7 +107,7 @@ class MainActivity : AppCompatActivity(), NotesAdapter.OnNoteDeleteListener, Not
             ednote.text=""
             ednoteTitle.text=""
         }
-
+        //↓↓↓ inicjalizacja recyclerView
         val recyclerView: RecyclerView = findViewById(R.id.notes_list)
         val layoutManager = LinearLayoutManager(this)
         recyclerView.layoutManager = layoutManager
@@ -117,13 +117,15 @@ class MainActivity : AppCompatActivity(), NotesAdapter.OnNoteDeleteListener, Not
             fetchData(user_email)
         }
     }
-
+    //↓↓↓ funckja odpowiadająca za usunięcie notatki po naciśnięciu obrazka kosza
     override fun onDeleteClicked(noteTitle: String) {
         db.collection("Notes")
+            //szukanie notatki  o określonym tytule, którą należy usunąć
             .whereEqualTo("noteTitle", noteTitle)
             .get()
             .addOnSuccessListener { documents ->
                 for (document in documents) {
+                    //usuwa notatke
                     document.reference.delete()
                         .addOnSuccessListener {
                             Log.d(TAG,"usunięto")
@@ -144,7 +146,7 @@ class MainActivity : AppCompatActivity(), NotesAdapter.OnNoteDeleteListener, Not
                 Log.e(TAG, "Error getting notes", exception)
             }
     }
-
+    // ↓↓↓ pobieranie aktualnych danych z bazy danych i aktualizowanie listy recycle View
     private suspend fun fetchData(userEmail: String) {
         try {
             val documents = db.collection("Notes")
@@ -179,6 +181,7 @@ class MainActivity : AppCompatActivity(), NotesAdapter.OnNoteDeleteListener, Not
         private const val TAG = "MainActivity"
     }
 
+    //↓↓↓ funkcja odpowiadająca za działania podczas widoku dialogu edycji notatki
     override fun onNoteClicked(noteTitle: String, noteText: String) {
         val updateNotesDialog = Dialog(this).apply {
             setContentView(R.layout.update_notes)
@@ -198,6 +201,7 @@ class MainActivity : AppCompatActivity(), NotesAdapter.OnNoteDeleteListener, Not
         val saveNotesBtn = updateNotesDialog.findViewById<Button>(R.id.save_notes_btn)
         val closeNotesBtn= updateNotesDialog.findViewById<ImageView>(R.id.closeImg)
 
+        //↓↓↓ działania przycisku zapisującego dane w bazie danych
         saveNotesBtn.setOnClickListener {
             val ednoteTitle = updateNotesDialog.findViewById<TextView>(R.id.ednoteTitle)
             val ednote = updateNotesDialog.findViewById<TextView>(R.id.ednote)
@@ -235,7 +239,7 @@ class MainActivity : AppCompatActivity(), NotesAdapter.OnNoteDeleteListener, Not
                 }
             }
 
-            // Zaktualizuj wartość note w bazie danych
+            //↓↓↓ Zaktualizuj wartość note w bazie danych
             db.collection("Notes")
                 .whereEqualTo("noteTitle", noteTitle)
                 .get()
@@ -264,7 +268,7 @@ class MainActivity : AppCompatActivity(), NotesAdapter.OnNoteDeleteListener, Not
             // Zamknięcie dialogu po zapisaniu notatki
             updateNotesDialog.dismiss()
         }
-
+        //↓↓↓ wyłączenie okna dialogowego edycji notatek
         closeNotesBtn.setOnClickListener{
             updateNotesDialog.dismiss()
         }
